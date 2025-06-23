@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test My Image Model</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 40px;
+    }
+    #imagePreview {
+      max-width: 300px;
+      margin-top: 20px;
+    }
+    #prediction {
+      font-size: 1.2em;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Upload an Image to Classify Emotion</h1>
+  <input type="file" id="imageUpload" accept="image/*">
+  <br>
+  <img id="imagePreview" src="" alt="Image preview will appear here">
+  <p id="prediction">Waiting for image...</p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.7.4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.4-alpha2"></script>
+  <script>
+    const modelURL = "./model.json";
+    const metadataURL = "./metadata.json";
+    let model;
+
+    async function loadModel() {
+      model = await tmImage.load(modelURL, metadataURL);
+    }
+
+    document.getElementById("imageUpload").addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const img = document.getElementById("imagePreview");
+      img.src = URL.createObjectURL(file);
+      img.onload = async () => {
+        const prediction = await model.predict(img);
+        const result = prediction.map(p => `${p.className}: ${(p.probability * 100).toFixed(1)}%`).join('<br>');
+        document.getElementById("prediction").innerHTML = result;
+      };
+    });
+
+    loadModel();
+  </script>
+</body>
+</html>
