@@ -26,15 +26,23 @@
   <img id="imagePreview" src="" alt="Image preview will appear here">
   <p id="prediction">Waiting for image...</p>
 
+  <!-- Load TensorFlow.js -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.7.4"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.4-alpha2"></script>
+  <!-- Load Teachable Machine Image (correct, stable version) -->
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
   <script>
     const modelURL = "./model.json";
     const metadataURL = "./metadata.json";
     let model;
 
     async function loadModel() {
-      model = await tmImage.load(modelURL, metadataURL);
+      try {
+        model = await tmImage.load(modelURL, metadataURL);
+        document.getElementById("prediction").innerText = "Model loaded! Waiting for image...";
+      } catch (e) {
+        document.getElementById("prediction").innerText = "Failed to load model. Check model.json and metadata.json paths!";
+        console.error(e);
+      }
     }
 
     document.getElementById("imageUpload").addEventListener("change", async (event) => {
@@ -43,9 +51,18 @@
       const img = document.getElementById("imagePreview");
       img.src = URL.createObjectURL(file);
       img.onload = async () => {
-        const prediction = await model.predict(img);
-        const result = prediction.map(p => `${p.className}: ${(p.probability * 100).toFixed(1)}%`).join('<br>');
-        document.getElementById("prediction").innerHTML = result;
+        if (!model) {
+          document.getElementById("prediction").innerText = "Model not loaded!";
+          return;
+        }
+        try {
+          const prediction = await model.predict(img);
+          const result = prediction.map(p => `${p.className}: ${(p.probability * 100).toFixed(1)}%`).join('<br>');
+          document.getElementById("prediction").innerHTML = result;
+        } catch (err) {
+          document.getElementById("prediction").innerText = "Prediction failed.";
+          console.error(err);
+        }
       };
     });
 
